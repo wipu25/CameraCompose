@@ -1,31 +1,29 @@
 package com.example.cameracompose
 
 import android.content.Context
-import android.util.Log
+import android.hardware.camera2.CameraCaptureSession
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import dagger.hilt.EntryPoint
 import dagger.hilt.EntryPoints
 import dagger.hilt.InstallIn
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class CameraComposeViewModel @Inject constructor(@ApplicationContext private val application: Context) : ViewModel() {
+class CameraComposeViewModel @Inject constructor(@ApplicationContext private val application: Context) :
+    ViewModel() {
 
     var cameraSettings: CameraSettings
-    private val _cameraAdjust: MutableLiveData<CameraAdjust> = MutableLiveData(CameraAdjust.NONE)
-    val cameraAdjust get() = _cameraAdjust
+    private val _cameraCurrentSettings: MutableLiveData<CameraCurrentSettings> =
+        MutableLiveData(null)
+    val cameraCurrentSettings get() = _cameraCurrentSettings
+    private val _lensFacing: MutableLiveData<Int> = MutableLiveData(CameraSelector.LENS_FACING_BACK)
+    val lensFacing get() = _lensFacing
 
     @EntryPoint
     @InstallIn(SingletonComponent::class)
@@ -35,22 +33,28 @@ class CameraComposeViewModel @Inject constructor(@ApplicationContext private val
 
     init {
         cameraSettings = EntryPoints.get(application, CamInterface::class.java).cameraSettings()
+        cameraSettings.cameraCurrentSettings.observeForever {
+            _cameraCurrentSettings.postValue(it)
+        }
+        cameraSettings.lensFacing.observeForever {
+            _lensFacing.postValue(it)
+        }
     }
 
-    fun initCamera(camera: Camera) {
-        cameraSettings.initCamera(camera)
+    fun getCameraInfo(camera: Camera): CameraInfoModel {
+        return cameraSettings.getCameraInfo(camera)
     }
 
-    fun adjustCamera() {
-        cameraSettings.adjustCamera()
+    fun adjustCamera(cameraAdjust: CameraAdjust, value: Int) {
+        cameraSettings.adjustCamera(cameraAdjust, value)
     }
 
-    fun getCameraLens(): Int {
-        return cameraSettings.lensFacing
+    fun captureCallback(): CameraCaptureSession.CaptureCallback {
+        return cameraSettings.captureCallback
     }
 
-    fun updateCameraAdjust(cameraAdjust: CameraAdjust){
-        _cameraAdjust.postValue(cameraAdjust)
+    fun switchCamera() {
+        cameraSettings.switchCameraLens()
     }
 }
 
