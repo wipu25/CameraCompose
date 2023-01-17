@@ -2,11 +2,9 @@ package com.example.cameracompose
 
 import android.Manifest
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.camera.core.CameraSelector
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
@@ -46,17 +44,11 @@ class MainActivity : ComponentActivity() {
             rememberPermissionState(permission = Manifest.permission.CAMERA)
         val lifecycleOwner = LocalLifecycleOwner.current
         var cameraCurrentSettings by remember { mutableStateOf<CameraCurrentSettings?>(null) }
-        var lensFacing by remember { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
 
         cameraComposeViewModel.cameraCurrentSettings.observe(lifecycleOwner) {
             if (it != null) {
                 cameraCurrentSettings = it
-                Log.d("Everythings is change", cameraCurrentSettings!!.ae.toString())
             }
-        }
-
-        cameraComposeViewModel.lensFacing.observe(lifecycleOwner) {
-            lensFacing = it
         }
 
         cameraComposeViewModel
@@ -75,9 +67,7 @@ class MainActivity : ComponentActivity() {
             })
         when {
             cameraPermissionState.hasPermission -> CameraPreview(
-                lensFacing = lensFacing,
                 onInitCameraPreview = { camera -> cameraComposeViewModel.getCameraInfo(camera) },
-                onSwitchCamera = { cameraComposeViewModel.switchCamera() },
                 cameraCurrentSettings = cameraCurrentSettings,
                 captureCallback = cameraComposeViewModel.captureCallback(),
             )

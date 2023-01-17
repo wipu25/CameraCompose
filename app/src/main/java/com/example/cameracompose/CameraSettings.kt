@@ -2,12 +2,10 @@ package com.example.cameracompose
 
 import android.annotation.SuppressLint
 import android.hardware.camera2.*
-import android.util.Log
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.camera.core.Camera
-import androidx.camera.core.CameraSelector
 import androidx.lifecycle.MutableLiveData
 import javax.inject.Inject
 
@@ -15,11 +13,9 @@ class CameraSettings @Inject constructor() {
 
 
     private lateinit var camera: Camera
-    private var _lensFacing: MutableLiveData<Int> = MutableLiveData(CameraSelector.LENS_FACING_BACK)
     private var _cameraCurrentSettings: MutableLiveData<CameraCurrentSettings?> =
         MutableLiveData(null)
     val cameraCurrentSettings get() = _cameraCurrentSettings
-    val lensFacing get() = _lensFacing
 
     @SuppressLint("UnsafeOptInUsageError")
     fun getCameraInfo(camera: Camera): CameraInfoModel {
@@ -31,7 +27,6 @@ class CameraSettings @Inject constructor() {
                 getCameraCharacteristic(CameraCharacteristics.SENSOR_INFO_SENSITIVITY_RANGE)!!
             val shutterSpeedRange =
                 getCameraCharacteristic(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE)!!
-            Log.d("Done", "Done get camera info")
             return CameraInfoModel(
                 upperAE = aeRange.upper,
                 lowerAE = aeRange.lower,
@@ -64,7 +59,6 @@ class CameraSettings @Inject constructor() {
                     )
                 )
             }
-            Log.d("AF_mode", result.get(CaptureResult.CONTROL_AF_MODE).toString())
             super.onCaptureCompleted(session, request, result)
         }
     }
@@ -87,13 +81,5 @@ class CameraSettings @Inject constructor() {
                     )
                 }
             }.build()
-    }
-
-    fun switchCameraLens() {
-        if (lensFacing.value == CameraSelector.LENS_FACING_BACK) {
-            lensFacing.postValue(CameraSelector.LENS_FACING_FRONT)
-        } else {
-            lensFacing.postValue(CameraSelector.LENS_FACING_BACK)
-        }
     }
 }

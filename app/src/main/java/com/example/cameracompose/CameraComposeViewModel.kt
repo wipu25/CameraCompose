@@ -3,7 +3,6 @@ package com.example.cameracompose
 import android.content.Context
 import android.hardware.camera2.CameraCaptureSession
 import androidx.camera.core.Camera
-import androidx.camera.core.CameraSelector
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import dagger.hilt.EntryPoint
@@ -22,8 +21,6 @@ class CameraComposeViewModel @Inject constructor(@ApplicationContext private val
     private val _cameraCurrentSettings: MutableLiveData<CameraCurrentSettings> =
         MutableLiveData(null)
     val cameraCurrentSettings get() = _cameraCurrentSettings
-    private val _lensFacing: MutableLiveData<Int> = MutableLiveData(CameraSelector.LENS_FACING_BACK)
-    val lensFacing get() = _lensFacing
 
     @EntryPoint
     @InstallIn(SingletonComponent::class)
@@ -35,9 +32,6 @@ class CameraComposeViewModel @Inject constructor(@ApplicationContext private val
         cameraSettings = EntryPoints.get(application, CamInterface::class.java).cameraSettings()
         cameraSettings.cameraCurrentSettings.observeForever {
             _cameraCurrentSettings.postValue(it)
-        }
-        cameraSettings.lensFacing.observeForever {
-            _lensFacing.postValue(it)
         }
     }
 
@@ -51,10 +45,6 @@ class CameraComposeViewModel @Inject constructor(@ApplicationContext private val
 
     fun captureCallback(): CameraCaptureSession.CaptureCallback {
         return cameraSettings.captureCallback
-    }
-
-    fun switchCamera() {
-        cameraSettings.switchCameraLens()
     }
 }
 

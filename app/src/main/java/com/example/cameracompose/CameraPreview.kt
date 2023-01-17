@@ -3,6 +3,7 @@ package com.example.cameracompose
 import android.annotation.SuppressLint
 import android.content.Context
 import android.hardware.camera2.CameraCaptureSession
+import android.util.Log
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
@@ -31,25 +32,26 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.math.roundToInt
 
 @SuppressLint("UnsafeOptInUsageError")
 @Composable
 // should contain only camera specific things
 fun CameraPreview(
-    lensFacing: Int,
     onInitCameraPreview: (camera: Camera) -> CameraInfoModel,
-    onSwitchCamera: () -> Unit,
     captureCallback: CameraCaptureSession.CaptureCallback,
     cameraCurrentSettings: CameraCurrentSettings?
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentContext = LocalContext.current
     val previewView = remember { PreviewView(currentContext) }
-    var cameraInfo = remember { mutableStateOf<CameraInfoModel?>(null) }
-    val cameraAdjust = remember { mutableStateOf<CameraAdjust>(CameraAdjust.NONE) }
+    val cameraInfo = remember { mutableStateOf<CameraInfoModel?>(null) }
+    val cameraAdjust = remember { mutableStateOf(CameraAdjust.NONE) }
+    val lensFacing = remember { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
+    val i = 100
 
     //binding camera here with lensFacing key to make sure when lens change it re-instantiate camera preview
-    LaunchedEffect(lensFacing) {
+    LaunchedEffect(lensFacing.value) {
         val cameraProvider = currentContext.getCameraProvider()
         val surfaceProvider = previewView.surfaceProvider
         val preview = Preview.Builder()
@@ -64,7 +66,7 @@ fun CameraPreview(
         val camera = cameraProvider.bindToLifecycle(
             lifecycleOwner,
             CameraSelector.Builder()
-                .requireLensFacing(lensFacing)
+                .requireLensFacing(lensFacing.value)
                 .build(),
             previewBuild,
         )
@@ -91,8 +93,10 @@ fun CameraPreview(
                     ) {
                         when (cameraAdjust.value) {
                             CameraAdjust.ISO -> {
-                                for (i in cameraInfo.value!!.lowerISO..cameraInfo.value!!.upperISO step 100) {
+                                var i = cameraInfo.value!!.lowerISO
+                                while (i <= cameraInfo.value!!.upperISO) {
                                     Text(i.toString(), modifier = Modifier.padding(Dp(4F)))
+                                    i += i
                                 }
                             }
                             CameraAdjust.EV -> {
@@ -111,9 +115,26 @@ fun CameraPreview(
 //                                }
 //                            }
                             CameraAdjust.S -> {
-                                for (i in cameraInfo.value!!.lowerShutterSpeed..cameraInfo.value!!.upperShutterSpeed step 10000000) {
-                                    Text(i.toString(), modifier = Modifier.padding(Dp(4F)))
+                                var i = cameraInfo.value!!.upperShutterSpeed
+                                var countoverSpeed = 1
+                                while (i >= cameraInfo.value!!.lowerShutterSpeed) {
+                                    val displayNum = i.toFloat().div(1000000)
+                                    if (displayNum.roundToInt() > 1) {
+                                        Text(
+                                            "1/${displayNum.roundToInt()} s",
+                                            modifier = Modifier.padding(Dp(4F))
+                                        )
+                                    } else {
+                                        Log.d("Display num", i.toString())
+                                        Text(
+                                            countoverSpeed.toString(),
+                                            modifier = Modifier.padding(Dp(4F))
+                                        )
+                                        countoverSpeed *= 2
+                                    }
+                                    i /= 2
                                 }
+                                Log.d("Display num", "END")
                             }
                         }
                     }
@@ -164,7 +185,13 @@ fun CameraPreview(
                 modifier = Modifier
                     .padding(Dp(20f))
                     .size(Dp(60f)),
-                onClick = { onSwitchCamera.invoke() }
+                onClick = {
+                    if (lensFacing.value == CameraSelector.LENS_FACING_BACK) {
+                        lensFacing.value = CameraSelector.LENS_FACING_FRONT
+                    } else {
+                        lensFacing.value = CameraSelector.LENS_FACING_BACK
+                    }
+                }
             ) { }
         }
     }
